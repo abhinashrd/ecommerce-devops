@@ -8,10 +8,11 @@ pipeline {
 
     stages {
         stage('Clone Repository') {
-            steps {
-                git 'https://github.com/abhinashrd/ecommerce-devops.git'
-            }
-        }
+    steps {
+        git url: 'https://github.com/abhinashrd/ecommerce-devops.git', branch: 'main'
+    }
+}
+
 
         stage('Build Docker Images') {
             steps {
