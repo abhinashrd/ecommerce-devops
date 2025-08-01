@@ -2,8 +2,9 @@ pipeline {
     agent any
 
     environment {
-        ORDER_SERVICE_PORT = '8001'
-        PAYMENT_SERVICE_PORT = '8002'
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub-cred') // Jenkins credentials ID
+        IMAGE_NAME_ORDER = "abhinashrd/order-service"
+        IMAGE_NAME_PAYMENT = "abhinashrd/payment-service"
     }
 
     stages {
@@ -15,22 +16,22 @@ pipeline {
 
         stage('Build Docker Images') {
             steps {
-                bat 'docker build -t order-service:latest order-service'
-                bat 'docker build -t payment-service:latest payment-service'
+                script {
+                    docker.build("${IMAGE_NAME_ORDER}", "./order-service")
+                    docker.build("${IMAGE_NAME_PAYMENT}", "./payment-service")
+                }
             }
         }
 
-        stage('Run Containers') {
+        stage('Push to DockerHub') {
             steps {
-                bat 'docker run -d -p %ORDER_SERVICE_PORT%:8000 --name order-container order-service:latest'
-                bat 'docker run -d -p %PAYMENT_SERVICE_PORT%:8000 --name payment-container payment-service:latest'
+                script {
+                    docker.withRegistry('', "${DOCKERHUB_CREDENTIALS}") {
+                        docker.image("${IMAGE_NAME_ORDER}").push("latest")
+                        docker.image("${IMAGE_NAME_PAYMENT}").push("latest")
+                    }
+                }
             }
-        }
-    }
-
-    post {
-        always {
-            echo 'Pipeline execution finished.'
         }
     }
 }
