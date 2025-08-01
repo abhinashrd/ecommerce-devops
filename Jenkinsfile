@@ -2,36 +2,35 @@ pipeline {
     agent any
 
     environment {
-        DOCKERHUB_CREDENTIALS = credentials('dockerhub-cred') // Jenkins credentials ID
-        IMAGE_NAME_ORDER = "abhinashrd/order-service"
-        IMAGE_NAME_PAYMENT = "abhinashrd/payment-service"
+        DOCKER_IMAGE = "abhinashrd/ecommerce"
     }
 
     stages {
         stage('Checkout Code') {
             steps {
-                git 'https://github.com/abhinashrd/ecommerce-devops.git'
+                git branch: 'main', url: 'https://github.com/abhinashrd/ecommerce-devops.git'
             }
         }
 
         stage('Build Docker Images') {
             steps {
                 script {
-                    docker.build("${IMAGE_NAME_ORDER}", "./order-service")
-                    docker.build("${IMAGE_NAME_PAYMENT}", "./payment-service")
+                    docker.build("${DOCKER_IMAGE}")
                 }
             }
         }
 
         stage('Push to DockerHub') {
             steps {
-                script {
-                    docker.withRegistry('', "${DOCKERHUB_CREDENTIALS}") {
-                        docker.image("${IMAGE_NAME_ORDER}").push("latest")
-                        docker.image("${IMAGE_NAME_PAYMENT}").push("latest")
+                withCredentials([usernamePassword(credentialsId: 'DOCKERHUB_CREDENTIALS', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+                    script {
+                        docker.withRegistry('https://index.docker.io/v1/', 'DOCKERHUB_CREDENTIALS') {
+                            docker.image("${DOCKER_IMAGE}").push()
+                        }
                     }
                 }
             }
         }
     }
 }
+
