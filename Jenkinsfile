@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE = "abhinashrd/ecommerce"
+        IMAGE_NAME = 'abhinashrd/ecommerce'
     }
 
     stages {
@@ -12,25 +12,25 @@ pipeline {
             }
         }
 
-        stage('Build Docker Images') {
+        stage('Build Docker Image') {
             steps {
-                script {
-                    docker.build("${DOCKER_IMAGE}")
-                }
+                bat 'docker build -t %IMAGE_NAME% .'
             }
         }
 
-        stage('Push to DockerHub') {
+        stage('Login to DockerHub and Push') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'DOCKERHUB_CREDENTIALS', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
-                    script {
-                        docker.withRegistry('https://index.docker.io/v1/', 'DOCKERHUB_CREDENTIALS') {
-                            docker.image("${DOCKER_IMAGE}").push()
-                        }
-                    }
+                withCredentials([usernamePassword(credentialsId: 'DOCKERHUB_CREDENTIALS', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    bat """
+                        echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin
+                        docker push %IMAGE_NAME%
+                    """
                 }
             }
         }
+    }
+}
+
     }
 }
 
